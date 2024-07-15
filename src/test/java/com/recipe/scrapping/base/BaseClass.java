@@ -19,7 +19,7 @@ public class BaseClass {
         ReadConfig readConfig = new ReadConfig();
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--remote-allow-origins=*");
-        options.addArguments("--incognito");
+  //      options.addArguments("--incognito");
 //        options.addArguments("--headless");
         options.addArguments("--window-position=2000,0");  // To 2nd monitor.
         driver = new ChromeDriver(options);
