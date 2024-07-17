@@ -1,0 +1,12 @@
+CREATE TABLE eliminator_recipe(
+  recipe_id int,
+  recipe_name VARCHAR(255),
+  recipe_category VARCHAR(255),
+  food_category VARCHAR(255),
+  ingredients VARCHAR(1000),
+  preparation_time VARCHAR(20),
+  cooking_time VARCHAR(20),
+  preparation_method VARCHAR(2000),
+  nutrient_values VARCHAR(500),
+  recipe_url VARCHAR(100)
+);
