@@ -14,11 +14,17 @@ public class AppConstants {
     public static final String Ingrediants = "rcpinglist";
     public static final String PreparationTime = "//time[@itemprop=\"prepTime\"]";
     public static final String CookTime = "//time[@itemprop=\"cookTime\"]";
-    public static final String Tag = "//div[@class=\"tags\"]";
+    public static final String Tag = "//div[@class=\"tags\"]//a";
     public static final String CuisineCategory = "//a[@href=\"recipes-for-veg-recipes-south-indian-44\"]";
     public static final String PreparationMethod ="//ol[@itemprop=\"recipeInstructions\"]";
     public static final String NutrientValues = "//table[@id=\"rcpnutrients\"]";
+    public static final String RecipeDescription = "//span[@itemprop=\"description\"]";
 
+    public static final String urlByAphabet = "https://www.tarladalal.com/RecipeAtoZ.aspx?beginswith=";
+    public static final String urlPageIndex = "&pageindex=";
+
+    public static final String ELIMINATORS = "Eliminators";
+    public static final String TO_ADD = "ToAdd";
 
 
 

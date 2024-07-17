@@ -1,7 +1,8 @@
 package com.recipe.scrapping.Enum;
 
+
 public enum FoodCategory {
-    VEG,
+    EGGITARIAN,
     NONVEG,
     VEGAN,
     JAIN
