@@ -56,6 +56,47 @@ public class ReadExcel {
     }
 
 
+    public static Map <String, List<String>> readExcelDataLFVElimination () throws IOException {
+        ReadConfig readConfig = new ReadConfig();
+        File excelFile = new File(readConfig.loadConfig().getProperty("eliminatorsList"));
+        FileInputStream fileInputStream = new FileInputStream(excelFile);
+        XSSFWorkbook workbook = new XSSFWorkbook(fileInputStream);
+        XSSFSheet sheet = workbook.getSheet("LFVElimination");
+        Iterator<Row> row = sheet.rowIterator();
+        Map<String, List<String>> eliminators_ToAdd_Map = new HashMap<String, List<String>>();
+        int rowCount = 0;
+        List<String> valuesEliminate = new ArrayList<>();
+        List<String> valuesToAdd = new ArrayList<>();
+        while (row.hasNext()) {
+            rowCount++;
+            Row currRow = row.next();
+            if (rowCount < 3) {
+                continue;
+            }
+
+
+            //running loop to add all eliminator list in list values
+//            for (int i = rowCount; i <= sheet.getLastRowNum(); i++) {
+                Cell valueCellEliminate = currRow.getCell(0);
+                Cell valueCellToAdd = currRow.getCell(1);
+                if (valueCellEliminate != null && !Strings.isNullOrEmpty(valueCellEliminate.getStringCellValue())) {
+                    valuesEliminate.add(valueCellEliminate.getStringCellValue());
+                }
+                if (valueCellToAdd != null && !Strings.isNullOrEmpty(valueCellToAdd.getStringCellValue())) {
+                    valuesToAdd.add(valueCellToAdd.getStringCellValue());
+                }
+
+//            }
+
+
+
+        }
+        eliminators_ToAdd_Map.put(AppConstants.ELIMINATORS, valuesEliminate);
+        eliminators_ToAdd_Map.put(AppConstants.TO_ADD, valuesToAdd);
+        workbook.close();
+        System.out.println(eliminators_ToAdd_Map);
+        return eliminators_ToAdd_Map;
+    }
 
 }
 
