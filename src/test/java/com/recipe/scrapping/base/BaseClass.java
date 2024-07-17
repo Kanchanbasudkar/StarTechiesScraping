@@ -2,7 +2,9 @@ package com.recipe.scrapping.base;
 
 import com.recipe.scrapping.util.ReadConfig;
 import io.github.bonigarcia.wdm.WebDriverManager;
+import io.opentelemetry.exporter.logging.SystemOutLogRecordExporter;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.testng.annotations.AfterTest;
@@ -14,20 +16,27 @@ public class BaseClass {
 
     @BeforeTest
     public void setUpDriver() {
-        WebDriverManager.chromedriver().setup();
+        if (driver == null) {
+            WebDriverManager.chromedriver().setup();
 
-        ReadConfig readConfig = new ReadConfig();
-        ChromeOptions options = new ChromeOptions();
-        options.addArguments("--remote-allow-origins=*");
-        options.addArguments("--incognito");
-//        options.addArguments("--headless");
-        options.addArguments("--window-position=2000,0");  // To 2nd monitor.
-        driver = new ChromeDriver(options);
-        driver.navigate().to(readConfig.loadConfig().getProperty("url"));
-        driver.manage().window().maximize();
+            ReadConfig readConfig = new ReadConfig();
+            ChromeOptions options = new ChromeOptions();
+            options.addArguments("--remote-allow-origins=*");
+            options.addArguments("--incognito");
+            options.addArguments("--headless");
+            options.addArguments("--disable-popup-blocking");
+            options.addArguments("--disable-notifications");
+            options.addArguments("--blink-settings=imagesEnabled=false");
+            options.addArguments("--window-position=2000,0");  // To 2nd monitor.
+            driver = new ChromeDriver(options);
+            driver.navigate().to(readConfig.loadConfig().getProperty("url"));
+            driver.manage().window().maximize();
+        }
     }
+
     @AfterTest
-    public void tearDown(){
+    public void tearDown() {
         //driver.close();
     }
+
 }
