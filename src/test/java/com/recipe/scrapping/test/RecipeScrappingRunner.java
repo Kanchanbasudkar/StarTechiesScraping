@@ -12,17 +12,44 @@ import net.bytebuddy.description.field.FieldDescription;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
-import java.sql.SQLOutput;
+import java.sql.*;
 import java.util.*;
 
 public class RecipeScrappingRunner extends BaseClass {
 
+    // Connection object
+    static Connection con = null;
+    // Statement object
+    private static Statement stmt;
+    // Constant for Database URL
+    public static String DB_URL = "jdbc:postgresql://localhost:5432/starTechies";
+    //Database Username
+    public static String DB_USER = "postgres";
+    // Database Password
+    public static String DB_PASSWORD = "admin";
 
     String mainPageUrl = "";
 
+    @BeforeTest
+    public void setUp() throws Exception {
+        try{
+// Database connection
+            String dbClass = "org.postgresql.Driver";
+            Class.forName(dbClass).newInstance();
+// Get connection to DB
+            Connection con = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+// Statement object to send the SQL statement to the Database
+            stmt = con.createStatement();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
 
     @Test
     public void startScraping() throws InterruptedException, IOException {
@@ -48,7 +75,6 @@ public class RecipeScrappingRunner extends BaseClass {
             for (int pageNum = 1; pageNum <= 1; pageNum++) {
                 navigateAlphabetAndPage(alphabet.toString(), pageNum);
                 recipeInformationMap = collectRecipeInformationWithRecipeCard();
-//      clickEachRecipe();
                 Set<Integer> recipeIds = recipeInformationMap.keySet();
                 for (Integer recipe : recipeIds) {
                     driver.navigate().to(recipeInformationMap.get(recipe).getRecipeURL());
@@ -93,7 +119,35 @@ public class RecipeScrappingRunner extends BaseClass {
 
         WriteExcel.writeInLCHFSheet(eliminatorRecipeInformation, "outputDataEliminatedRecipies");
         WriteExcel.writeInLCHFSheet(toAddRecipeInformation, "outputDataToAddRecipies");
+        eliminatorRecipeInformation.stream().forEach(recipeInformation -> {
+            try {
+                insertDataEliminatorTable(recipeInformation);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        });
         System.out.println("end of startscraping");
+    }
+
+    public void insertDataEliminatorTable(RecipeInformation recipeInformation) throws SQLException {
+        String sql = "INSERT INTO eliminator_recipe(\n" +
+                "  recipe_id,\n" +
+                "  recipe_name,\n" +
+                "  recipe_category,\n" +
+                "  food_category,\n" +
+                "  ingredients,\n" +
+                "  preparation_time,\n" +
+                "  cooking_time,\n" +
+                "  preparation_method,\n" +
+                "  nutrient_values,\n" +
+                "  recipe_url\n" +
+                ") VALUES ("+recipeInformation.getRecipeID()+",'"+recipeInformation.getRecipeName()+
+                "','"+recipeInformation.getRecipeCategory()+"','"+recipeInformation.getFoodCategory()+
+                "','"+recipeInformation.getIngredients()+"','"+recipeInformation.getPreparationTime()+
+                "','"+recipeInformation.getCookingTime()+"','"+recipeInformation.getPreparationMethod()+
+                "','"+recipeInformation.getNutrientValues()+"','"+recipeInformation.getRecipeURL()+"')";
+        stmt.executeUpdate(sql);
+
     }
 
     public int getPageNumbersByAlphabet(String alphabet) {
