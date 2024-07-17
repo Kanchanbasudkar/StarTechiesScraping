@@ -8,6 +8,8 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 
+import java.sql.SQLException;
+
 
 public class BaseClass {
     public static WebDriver driver;
@@ -27,7 +29,7 @@ public class BaseClass {
         driver.manage().window().maximize();
     }
     @AfterTest
-    public void tearDown(){
-        //driver.close();
+    public void tearDown() throws SQLException {
+        driver.close();
     }
 }

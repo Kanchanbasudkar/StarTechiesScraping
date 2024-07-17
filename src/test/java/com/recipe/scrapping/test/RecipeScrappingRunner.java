@@ -7,11 +7,9 @@ import com.recipe.scrapping.base.BaseClass;
 import com.recipe.scrapping.model.RecipeInformation;
 import com.recipe.scrapping.util.AppConstants;
 import com.recipe.scrapping.util.ReadExcel;
-import com.recipe.scrapping.util.WriteExcel;
-import net.bytebuddy.description.field.FieldDescription;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -32,6 +30,8 @@ public class RecipeScrappingRunner extends BaseClass {
     // Database Password
     public static String DB_PASSWORD = "admin";
 
+    public static Map<String, List<String>> eliminators_ToAdd_Map;
+
     String mainPageUrl = "";
 
     @BeforeTest
@@ -44,6 +44,7 @@ public class RecipeScrappingRunner extends BaseClass {
             Connection con = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
 // Statement object to send the SQL statement to the Database
             stmt = con.createStatement();
+            eliminators_ToAdd_Map = ReadExcel.readExcelDataLCHFElimination();
         }
         catch (Exception e)
         {
@@ -52,17 +53,14 @@ public class RecipeScrappingRunner extends BaseClass {
     }
 
     @Test
-    public void startScraping() throws InterruptedException, IOException {
+    public void startLchfScraping() throws InterruptedException, IOException, SQLException {
 
-        List<RecipeInformation> eliminatorRecipeInformation = new ArrayList<>();
-        List<RecipeInformation> toAddRecipeInformation = new ArrayList<>();
-        Map<String, List<String>> eliminators_ToAdd_Map = ReadExcel.readExcelDataLCHFElimination();
         System.out.println("started scrapping");
         clickAToZ();
 
         Map<Character, Integer> alphabetVsPageCount = new HashMap<>();
 //        for (int i = 65; i<=90; i++) {
-        for (int i = 65; i <= 65; i++) {
+        for (int i = 67; i <= 75; i++) {
             char alphabet = (char) i;
             alphabetVsPageCount.put(alphabet, getPageNumbersByAlphabet(String.valueOf(alphabet)));
         }
@@ -71,39 +69,56 @@ public class RecipeScrappingRunner extends BaseClass {
         Map<Integer, RecipeInformation> recipeInformationMap = new HashMap<>();
         for (Character alphabet : alphabetChar) {
             Integer numberOfPages = alphabetVsPageCount.get(alphabet);
-//            for (int pageNum = 1; pageNum <= numberOfPages; pageNum++) {
-            for (int pageNum = 1; pageNum <= 1; pageNum++) {
-                navigateAlphabetAndPage(alphabet.toString(), pageNum);
-                recipeInformationMap = collectRecipeInformationWithRecipeCard();
-                Set<Integer> recipeIds = recipeInformationMap.keySet();
-                for (Integer recipe : recipeIds) {
-                    driver.navigate().to(recipeInformationMap.get(recipe).getRecipeURL());
-                    collectRecipeInformation(recipeInformationMap.get(recipe));
+            for (int pageNum = 1; pageNum <= numberOfPages; pageNum++) {
+//            for (int pageNum = 1; pageNum <= 5; pageNum++) {
+                try {
+                    navigateAlphabetAndPage(alphabet.toString(), pageNum);
+                    recipeInformationMap = collectRecipeInformationWithRecipeCard();
+                    Set<Integer> recipeIds = recipeInformationMap.keySet();
+                    for (Integer recipe : recipeIds) {
+                        try {
+                            driver.navigate().to(recipeInformationMap.get(recipe).getRecipeURL());
+                            collectRecipeInformation(recipeInformationMap.get(recipe));
+                        } catch (Exception e) {
+                            System.out.println("failed to retrieve details for " + recipe);
+                        }
+                    }
+                    System.out.println("Completed " + alphabet + " page number " + pageNum);
+                } catch (Exception e) {
+                    System.out.println("failed to retrieve details for alphabet "+alphabet+" page " + pageNum);
                 }
-                System.out.println("Completed " + alphabet + " page number " + pageNum);
+                insertLchfIntoDatabase(prepareEliminator_AddList(recipeInformationMap));
             }
             System.out.println("Completed " + alphabet);
         }
 
+
+        stmt.close();
+        System.out.println("end of startscraping");
+    }
+
+    public Map<String, List<RecipeInformation>> prepareEliminator_AddList(Map<Integer, RecipeInformation> recipeInformationMap){
+        Map<String, List<RecipeInformation>> eliminators_ToAdd_Map_ForDatabase = new HashMap<>();
+        List<RecipeInformation> eliminatorRecipeInformation = new ArrayList<>();
+        List<RecipeInformation> toAddRecipeInformation = new ArrayList<>();
         for (RecipeInformation recipeInformation :
-        recipeInformationMap.values()
-             ) {
+                recipeInformationMap.values()
+        ) {
+
             Boolean eliminatorFoundInRecipe = Boolean.FALSE;
             Boolean toAddFoundInRecipe = Boolean.FALSE;
             List<String> eliminatorList = eliminators_ToAdd_Map.get(AppConstants.ELIMINATORS);
             List<String> toAddList = eliminators_ToAdd_Map.get(AppConstants.TO_ADD);
             for (String eliminatorItem: eliminatorList
-                 ) {
-                if(recipeInformation.getIngredients().contains(eliminatorItem)){
+            ) {
+                if(recipeInformation.getIngredients()!=null && recipeInformation.getIngredients().contains(eliminatorItem)){
                     eliminatorFoundInRecipe = Boolean.TRUE;
-                    break;
                 }
             }
             for (String toAddItem: toAddList
-                 ) {
-                if(recipeInformation.getIngredients().contains(toAddItem)){
+            ) {
+                if(recipeInformation.getIngredients()!=null &&  recipeInformation.getIngredients().contains(toAddItem)){
                     toAddFoundInRecipe = Boolean.TRUE;
-                    break;
                 }
             }
 
@@ -115,22 +130,64 @@ public class RecipeScrappingRunner extends BaseClass {
             }
 
         }
-//        recipeInformationMap.values().stream().map(x -> x.getIngredients().contains())
+        eliminators_ToAdd_Map_ForDatabase.put(AppConstants.ELIMINATORS, eliminatorRecipeInformation);
+        eliminators_ToAdd_Map_ForDatabase.put(AppConstants.TO_ADD, toAddRecipeInformation);
+        return eliminators_ToAdd_Map_ForDatabase;
+    }
 
-        WriteExcel.writeInLCHFSheet(eliminatorRecipeInformation, "outputDataEliminatedRecipies");
-        WriteExcel.writeInLCHFSheet(toAddRecipeInformation, "outputDataToAddRecipies");
+    public void insertLchfIntoDatabase(Map<String, List<RecipeInformation>> eliminators_ToAdd_Map_ForDatabase){
+        List<RecipeInformation> eliminatorRecipeInformation = eliminators_ToAdd_Map_ForDatabase.get(AppConstants.ELIMINATORS);
+        List<RecipeInformation> toAddRecipeInformation = eliminators_ToAdd_Map_ForDatabase.get(AppConstants.TO_ADD);
         eliminatorRecipeInformation.stream().forEach(recipeInformation -> {
             try {
-                insertDataEliminatorTable(recipeInformation);
+                insertLchfDataEliminatorTable(recipeInformation);
             } catch (SQLException e) {
                 e.printStackTrace();
             }
         });
-        System.out.println("end of startscraping");
+        toAddRecipeInformation.stream().forEach(recipeInformation -> {
+            try {
+                insertLchfDataAddTable(recipeInformation);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
-    public void insertDataEliminatorTable(RecipeInformation recipeInformation) throws SQLException {
-        String sql = "INSERT INTO eliminator_recipe(\n" +
+
+
+    @AfterTest
+    public void tearDown() throws SQLException {
+// Close DB connection
+        if (con != null) {
+            con.close();
+        }
+    }
+
+
+    public void insertLchfDataEliminatorTable(RecipeInformation recipeInformation) throws SQLException {
+        String sql = "INSERT INTO lchf_eliminator_recipe(\n" +
+                "  recipe_id,\n" +
+                "  recipe_name,\n" +
+                "  recipe_category,\n" +
+                "  food_category,\n" +
+                "  ingredients,\n" +
+                "  preparation_time,\n" +
+                "  cooking_time,\n" +
+                "  preparation_method,\n" +
+                "  nutrient_values,\n" +
+                "  recipe_url\n" +
+                ") VALUES ("+recipeInformation.getRecipeID()+",'"+recipeInformation.getRecipeName()+
+                "','"+recipeInformation.getRecipeCategory()+"','"+recipeInformation.getFoodCategory()+
+                "','"+recipeInformation.getIngredients()+"','"+recipeInformation.getPreparationTime()+
+                "','"+recipeInformation.getCookingTime()+"','"+recipeInformation.getPreparationMethod()+
+                "','"+recipeInformation.getNutrientValues()+"','"+recipeInformation.getRecipeURL()+"')";
+        stmt.executeUpdate(sql);
+
+    }
+
+    public void insertLchfDataAddTable(RecipeInformation recipeInformation) throws SQLException {
+        String sql = "INSERT INTO lchf_add_recipe(\n" +
                 "  recipe_id,\n" +
                 "  recipe_name,\n" +
                 "  recipe_category,\n" +
