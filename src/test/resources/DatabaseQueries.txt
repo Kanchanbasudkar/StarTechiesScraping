@@ -1,4 +1,43 @@
-CREATE TABLE eliminator_recipe(
+CREATE TABLE lchf_eliminator_recipe(
+  recipe_id int,
+  recipe_name VARCHAR(255),
+  recipe_category VARCHAR(255),
+  food_category VARCHAR(255),
+  ingredients VARCHAR(1000),
+  preparation_time VARCHAR(20),
+  cooking_time VARCHAR(20),
+  preparation_method VARCHAR(2000),
+  nutrient_values VARCHAR(500),
+  recipe_url VARCHAR(100)
+);
+
+CREATE TABLE lchf_add_recipe(
+  recipe_id int,
+  recipe_name VARCHAR(255),
+  recipe_category VARCHAR(255),
+  food_category VARCHAR(255),
+  ingredients VARCHAR(1000),
+  preparation_time VARCHAR(20),
+  cooking_time VARCHAR(20),
+  preparation_method VARCHAR(2000),
+  nutrient_values VARCHAR(500),
+  recipe_url VARCHAR(100)
+);
+
+CREATE TABLE lfv_eliminator_recipe(
+  recipe_id int,
+  recipe_name VARCHAR(255),
+  recipe_category VARCHAR(255),
+  food_category VARCHAR(255),
+  ingredients VARCHAR(1000),
+  preparation_time VARCHAR(20),
+  cooking_time VARCHAR(20),
+  preparation_method VARCHAR(2000),
+  nutrient_values VARCHAR(500),
+  recipe_url VARCHAR(100)
+);
+
+CREATE TABLE lfv_add_recipe(
   recipe_id int,
   recipe_name VARCHAR(255),
   recipe_category VARCHAR(255),
