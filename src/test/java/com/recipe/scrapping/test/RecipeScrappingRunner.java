@@ -60,7 +60,7 @@ public class RecipeScrappingRunner extends BaseClass {
 
         Map<Character, Integer> alphabetVsPageCount = new HashMap<>();
 //        for (int i = 65; i<=90; i++) {
-        for (int i = 67; i <= 75; i++) {
+        for (int i = 75; i <= 77; i++) {
             char alphabet = (char) i;
             alphabetVsPageCount.put(alphabet, getPageNumbersByAlphabet(String.valueOf(alphabet)));
         }
